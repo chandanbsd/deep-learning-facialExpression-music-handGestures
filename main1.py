@@ -28,10 +28,12 @@ def open_stuff(filename): #Open the file, credit to user4815162342, on the stack
         opener ="open" if sys.platform == "darwin" else "xdg-open"
         subprocess.call([opener, filename])
 def crop_face(clahe_image, face):
+    facedict.clear()
     for (x, y, w, h) in face:
         faceslice = clahe_image[y:y+h, x:x+w]
         faceslice = cv2.resize(faceslice, (350, 350))
     facedict["face%s" %(len(facedict)+1)] = faceslice
+    print(facedict.keys())
     return faceslice
 def update_model(emotions):
     print("Model update mode active")
