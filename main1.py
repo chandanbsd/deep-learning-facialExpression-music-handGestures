@@ -58,19 +58,12 @@ def save_face(emotion):
         cv2.imwrite("dataset\\%s\\%s.jpg" %(emotion, len(glob.glob("dataset\\%s\\*" %emotion))), facedict[x])
     facedict.clear()
 def recognize_emotion():
-    predictions = []
-    confidence = []
     for x in facedict.keys():
         pred, conf = fishface.predict(facedict[x])
         cv2.imwrite("images\\%s.jpg" %x, facedict[x])
-        predictions.append(pred)
-        confidence.append(conf)
-    recognized_emotion = emotions[predictions[-1]]
+    recognized_emotion = emotions[pred]
     print("I think you're %s" %recognized_emotion)
-    print(type(predictions))
-    print(confidence)
-    predictions.clear()
-    confidence.clear()
+    print(pred)
 
     # actionlist = [x for x in actions[recognized_emotion]] #get list of actions/files for detected emotion
     # random.shuffle(actionlist) #Randomly shuffle the list
