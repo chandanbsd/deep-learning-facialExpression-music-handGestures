@@ -65,9 +65,9 @@ def recognize_emotion():
         cv2.imwrite("images\\%s.jpg" %x, facedict[x])
         predictions.append(pred)
         confidence.append(conf)
-    recognized_emotion = emotions[max(set(predictions), key=predictions.count)]
+    recognized_emotion = emotions[predictions[-1]]
     print("I think you're %s" %recognized_emotion)
-    print(predictions)
+    print(type(predictions))
     print(confidence)
     predictions.clear()
     confidence.clear()
