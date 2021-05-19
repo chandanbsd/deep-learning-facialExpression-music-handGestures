@@ -6,6 +6,7 @@ camnumber = 0
 detected = 0
 count = 0
 count1 = 0
+Player = 0
 
 #hand detetction
 detector = htm.handDetector(detectionCon=0.75)
@@ -57,6 +58,7 @@ def crop_face(clahe_image, face):
 
 
 def recognize_emotion():
+    global Player
     for x in facedict.keys():
         pred, conf = fishface.predict(facedict[x])
         cv2.imwrite("images\\%s.jpg" %x, facedict[x])
@@ -65,9 +67,11 @@ def recognize_emotion():
     print(pred)
     print(conf)
 
-    # actionlist = [x for x in actions[recognized_emotion]] #get list of actions/files for detected emotion
-    # random.shuffle(actionlist) #Randomly shuffle the list
-    # open_stuff(actionlist[0]) #Open the first entry in the list
+    actionlist = [x for x in actions[recognized_emotion]] #get list of actions/files for detected emotion
+    #random.shuffle(actionlist) #Randomly shuffle the list
+    open_stuff(actionlist[0]) #Open the first entry in the list
+    Player = 1
+
 def grab_webcamframe():
     ret, frame = video_capture.read()
     cv2.imshow("image", frame)
@@ -97,7 +101,8 @@ def run_detection():
 
 while True:
     detected = 0
-    run_detection()
+    if Player == 0:
+        run_detection()
     success, img = video_capture.read() 
     img = detector.findHands(img)
     lmList = detector.findPosition(img, draw=False)
