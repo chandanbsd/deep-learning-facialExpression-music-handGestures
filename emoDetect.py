@@ -143,11 +143,9 @@ while True:
             count1 = 0
             
         elif totalFingers == 4:
-            #p.press("nexttrack")
             count = 0
-
             if count1 == 0:
-                p.press("playpause")
+                p.press("nexttrack")    
             
             count1=count1+1
             if count1 > 20:
