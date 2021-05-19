@@ -1,9 +1,21 @@
 import cv2, numpy as np, argparse, time, glob, os, sys, subprocess, pandas, random, math, ctypes, win32con
 #Define variables and load classifier
+import HandTrackingModule as htm
+import pyautogui as p
 camnumber = 0
 detected = 0
+count = 0
+count1 = 0
+
+#hand detetction
+detector = htm.handDetector(detectionCon=0.75)
+tipIds = [4, 8, 12, 16, 20]
+
+#face detection
+wCam, hCam = 640, 480
 
 video_capture = cv2.VideoCapture(0)
+
 facecascade = cv2.CascadeClassifier("haarcascade_frontalface_default.xml")
 fishface = cv2.face.FisherFaceRecognizer_create()
 
@@ -51,6 +63,7 @@ def recognize_emotion():
     recognized_emotion = emotions[pred]
     print("I think you're %s" %recognized_emotion)
     print(pred)
+    print(conf)
 
     # actionlist = [x for x in actions[recognized_emotion]] #get list of actions/files for detected emotion
     # random.shuffle(actionlist) #Randomly shuffle the list
@@ -82,10 +95,62 @@ def run_detection():
         recognize_emotion()
         detected = 0
 
-
-    
-
 while True:
     detected = 0
     run_detection()
-    cv2.waitKey(1)
+    success, img = video_capture.read() 
+    img = detector.findHands(img)
+    lmList = detector.findPosition(img, draw=False)
+    #print(lmList)
+
+    if len(lmList) != 0:
+        fingers = []
+        #thumb
+        for id in range(1,5):
+            if lmList[tipIds[id]][2] < lmList[tipIds[id]-2][2]:
+                fingers.append(1)
+            else:
+                fingers.append(0)
+
+        #print(fingers)
+        totalFingers = fingers.count(1)
+
+        if totalFingers == 0:
+            pass
+
+        elif totalFingers == 1:
+            if count == 0:
+                p.press("playpause")
+                count1 = 0
+            
+            count=count+1
+            if count > 20:
+                count = 0
+
+        elif totalFingers == 2:
+            p.press("volumeup")
+            count = 0
+            count1 = 0
+            
+        elif totalFingers == 3:
+            p.press("volumedown")
+            count = 0
+            count1 = 0
+            
+        elif totalFingers == 4:
+            #p.press("nexttrack")
+            count = 0
+
+            if count1 == 0:
+                p.press("playpause")
+            
+            count1=count1+1
+            if count1 > 20:
+                count1 = 0
+
+        else:
+            pass
+
+    cv2.imshow("image", img)
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
