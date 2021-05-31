@@ -7,6 +7,17 @@ detected = 0
 count = 0
 count1 = 0
 Player = 0
+emotion_rec = 0
+
+folderPath = "Images"
+myList = ['0.png', '1.png', '2.png', '3.png', '4.jpg', '5.jpg', '6.jpg', '7.jpg', '8.jpg', '9.png']
+print(myList)
+overlayList = []
+for imPath in myList:
+    image = cv2.imread(f'{folderPath}/{imPath}')
+    #print(f'{folderPath}/{imPath}')
+    overlayList.append(image)
+
 
 #hand detetction
 detector = htm.handDetector(detectionCon=0.75)
@@ -16,6 +27,8 @@ tipIds = [4, 8, 12, 16, 20]
 wCam, hCam = 640, 480
 
 video_capture = cv2.VideoCapture(0)
+
+cv2.moveWindow("image", 0,0)
 
 facecascade = cv2.CascadeClassifier("haarcascade_frontalface_default.xml")
 fishface = cv2.face.FisherFaceRecognizer_create()
@@ -50,35 +63,49 @@ def crop_face(clahe_image, face):
     for (x, y, w, h) in face:
         faceslice = clahe_image[y:y+h, x:x+w]
         faceslice = cv2.resize(faceslice, (350, 350))
+
     facedict["face%s" %(len(facedict)+1)] = faceslice
     return faceslice
 
-
-  
-
-
 def recognize_emotion():
     global Player
+    global emotion_rec
     for x in facedict.keys():
         pred, conf = fishface.predict(facedict[x])
         cv2.imwrite("images\\%s.jpg" %x, facedict[x])
     recognized_emotion = emotions[pred]
+
+    #face image value
+    if recognized_emotion == "happy":
+        emotion_rec = 0
+
+    elif recognized_emotion == "sad":
+        emotion_rec = 1
+
+    elif recognized_emotion == "angry":
+        emotion_rec = 2
+
+    elif recognized_emotion == "neutral":
+        emotion_rec = 3
+
+    else:
+        pass
+
     print("I think you're %s" %recognized_emotion)
     print(pred)
     print(conf)
 
-    actionlist = [x for x in actions[recognized_emotion]] #get list of actions/files for detected emotion
+    #actionlist = [x for x in actions[recognized_emotion]] #get list of actions/files for detected emotion
     #random.shuffle(actionlist) #Randomly shuffle the list
-    open_stuff(actionlist[0]) #Open the first entry in the list
+        
+    #open_stuff(actionlist[0]) #Open the first entry in the list
     Player = 1
 
 def grab_webcamframe():
     ret, frame = video_capture.read()
-    cv2.imshow("image", frame)
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
     clahe_image = clahe.apply(gray)
-    cv2.imshow("game", clahe_image)
     return clahe_image
 
 def detect_face():
@@ -99,6 +126,20 @@ def run_detection():
         recognize_emotion()
         detected = 0
 
+hand_detected = 9 #default hand image number
+
+
+#positioning window
+cv2. namedWindow("image")
+cv2.moveWindow("image", 0,100)
+
+cv2. namedWindow("Emotion detected")
+cv2.moveWindow("Emotion detected", 640,100)
+
+cv2. namedWindow("Hand detected")
+cv2.moveWindow("Hand detected", 1280,100)
+
+
 while True:
     detected = 0
     if Player == 0:
@@ -106,54 +147,74 @@ while True:
     success, img = video_capture.read() 
     img = detector.findHands(img)
     lmList = detector.findPosition(img, draw=False)
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    # Detect the faces
+    faces = facecascade.detectMultiScale(gray, 1.1, 4)
+    # Draw the rectangle around each face
+    for (x, y, w, h) in faces:
+        cv2.rectangle(img, (x, y), (x+w, y+h), (255, 0, 0), 2)
     #print(lmList)
 
     if len(lmList) != 0:
         fingers = []
-        #thumb
-        for id in range(1,5):
-            if lmList[tipIds[id]][2] < lmList[tipIds[id]-2][2]:
-                fingers.append(1)
-            else:
-                fingers.append(0)
+        
+        #finger position
+        thumb = not(((lmList[5][1] > lmList[4][1]) & (lmList[17][1] < lmList[4][1]))|((lmList[5][1] < lmList[4][1]) & (lmList[17][1] > lmList[4][1])))
+        indexF = lmList[8][2] < lmList[6][2]
+        middleF = lmList[12][2] < lmList[10][2]
+        ringF = lmList[16][2] < lmList[14][2]
+        pinkyF = lmList[20][2] < lmList[18][2]
 
-        #print(fingers)
-        totalFingers = fingers.count(1)
-
-        if totalFingers == 0:
+        if ((lmList[5][2] < lmList[0][2]) & (lmList[17][2] < lmList[0][2]) & (((lmList[5][1] > lmList[0][1]) & (lmList[17][1] < lmList[0][1])) | ((lmList[5][1] < lmList[0][1]) & (lmList[17][1] > lmList[0][1])))):
             pass
 
-        elif totalFingers == 1:
-            if count == 0:
-                p.press("playpause")
-                count1 = 0
-            
-            count=count+1
-            if count > 20:
+            if indexF and pinkyF and not(middleF) and not(ringF):
+                Player = 0
+                cv2.putText(img, "detecting emotion",(10,70), cv2.FONT_HERSHEY_PLAIN, 3, (255,0,255), 3)
+                hand_detected =5
+
+            elif indexF and not(pinkyF) and not(middleF) and not(ringF):
+                if count == 0:
+                    p.press("playpause")
+                    cv2.putText(img, "play/pause",(10,70), cv2.FONT_HERSHEY_PLAIN, 3, (255,0,255), 3)
+                    count1 = 0
+                    hand_detected = 6
+                
+                count=count+1
+                if count > 20:
+                    count = 0
+
+            elif indexF and not(pinkyF) and middleF and not(ringF):
+                p.press("volumeup")
+                cv2.putText(img, "Increasing volume",(10,70), cv2.FONT_HERSHEY_PLAIN, 3, (255,0,255), 3)
+                hand_detected = 8
                 count = 0
-
-        elif totalFingers == 2:
-            p.press("volumeup")
-            count = 0
-            count1 = 0
-            
-        elif totalFingers == 3:
-            p.press("volumedown")
-            count = 0
-            count1 = 0
-            
-        elif totalFingers == 4:
-            count = 0
-            if count1 == 0:
-                p.press("nexttrack")    
-            
-            count1=count1+1
-            if count1 > 20:
                 count1 = 0
 
-        else:
-            pass
+                
+            elif indexF and not(pinkyF) and middleF and ringF:
+                p.press("volumedown")
+                cv2.putText(img, "Decreasing volume",(10,70), cv2.FONT_HERSHEY_PLAIN, 3, (255,0,255), 3)
+                hand_detected = 7
+                count = 0
+                count1 = 0
+                
+            elif indexF and pinkyF and middleF and ringF:
+                count = 0
+                if count1 == 0:
+                    p.press("nexttrack")
+                    cv2.putText(img, "Next Track",(10,70), cv2.FONT_HERSHEY_PLAIN, 3, (255,0,255), 3)
+                    hand_detected = 4    
+                
+                count1=count1+1
+                if count1 > 20:
+                    count1 = 0
 
+            else:
+                pass
+    
+    cv2.imshow("Hand detected", overlayList[hand_detected])
+    cv2.imshow("Emotion detected", overlayList[emotion_rec])
     cv2.imshow("image", img)
     if cv2.waitKey(1) & 0xFF == ord('q'):
             break
