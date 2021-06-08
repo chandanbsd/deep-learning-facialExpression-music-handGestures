@@ -6,16 +6,17 @@ camnumber = 0
 detected = 0
 count = 0
 count1 = 0
-Player = 0
-emotion_rec = 0
+Player = 1
+emotion_rec = 10
 
 folderPath = "Images"
-myList = ['0.png', '1.png', '2.png', '3.png', '4.jpg', '5.jpg', '6.jpg', '7.jpg', '8.jpg', '9.png']
+myList = ['0.png', '1.png', '2.png', '3.png', '4.jpg', '5.jpg', '6.jpg', '7.jpg', '8.jpg', '9.png', '10.png']
 print(myList)
 overlayList = []
 for imPath in myList:
     image = cv2.imread(f'{folderPath}/{imPath}')
     #print(f'{folderPath}/{imPath}')
+    image = cv2.resize(image, (450, 337))
     overlayList.append(image)
 
 
@@ -95,10 +96,10 @@ def recognize_emotion():
     print(pred)
     print(conf)
 
-    #actionlist = [x for x in actions[recognized_emotion]] #get list of actions/files for detected emotion
+    actionlist = [x for x in actions[recognized_emotion]] #get list of actions/files for detected emotion
     #random.shuffle(actionlist) #Randomly shuffle the list
         
-    #open_stuff(actionlist[0]) #Open the first entry in the list
+    open_stuff(actionlist[0]) #Open the first entry in the list
     Player = 1
 
 def grab_webcamframe():
@@ -131,13 +132,13 @@ hand_detected = 9 #default hand image number
 
 #positioning window
 cv2. namedWindow("image")
-cv2.moveWindow("image", 0,100)
+cv2.moveWindow("image", 0,50)
 
 cv2. namedWindow("Emotion detected")
-cv2.moveWindow("Emotion detected", 640,100)
+cv2.moveWindow("Emotion detected", 450,50)
 
 cv2. namedWindow("Hand detected")
-cv2.moveWindow("Hand detected", 1280,100)
+cv2.moveWindow("Hand detected", 900,50)
 
 
 while True:
@@ -154,7 +155,7 @@ while True:
     for (x, y, w, h) in faces:
         cv2.rectangle(img, (x, y), (x+w, y+h), (255, 0, 0), 2)
     #print(lmList)
-
+    img = cv2.resize(img, (450, 337))
     if len(lmList) != 0:
         fingers = []
         
@@ -173,7 +174,7 @@ while True:
                 cv2.putText(img, "detecting emotion",(10,70), cv2.FONT_HERSHEY_PLAIN, 3, (255,0,255), 3)
                 hand_detected =5
 
-            elif indexF and not(pinkyF) and not(middleF) and not(ringF):
+            elif not(thumb) and indexF and not(pinkyF) and not(middleF) and not(ringF):
                 if count == 0:
                     p.press("playpause")
                     cv2.putText(img, "play/pause",(10,70), cv2.FONT_HERSHEY_PLAIN, 3, (255,0,255), 3)
@@ -184,7 +185,7 @@ while True:
                 if count > 20:
                     count = 0
 
-            elif indexF and not(pinkyF) and middleF and not(ringF):
+            elif not(thumb) and indexF and not(pinkyF) and middleF and not(ringF):
                 p.press("volumeup")
                 cv2.putText(img, "Increasing volume",(10,70), cv2.FONT_HERSHEY_PLAIN, 3, (255,0,255), 3)
                 hand_detected = 8
@@ -192,14 +193,14 @@ while True:
                 count1 = 0
 
                 
-            elif indexF and not(pinkyF) and middleF and ringF:
+            elif not(thumb) and indexF and not(pinkyF) and middleF and ringF:
                 p.press("volumedown")
                 cv2.putText(img, "Decreasing volume",(10,70), cv2.FONT_HERSHEY_PLAIN, 3, (255,0,255), 3)
                 hand_detected = 7
                 count = 0
                 count1 = 0
                 
-            elif indexF and pinkyF and middleF and ringF:
+            elif not(thumb) and indexF and pinkyF and middleF and ringF:
                 count = 0
                 if count1 == 0:
                     p.press("nexttrack")
@@ -209,6 +210,26 @@ while True:
                 count1=count1+1
                 if count1 > 20:
                     count1 = 0
+
+            elif thumb and indexF and not(pinkyF) and not(middleF) and not(ringF):
+                actionlist = [x for x in actions["happy"]]
+                open_stuff(actionlist[0])
+                emotion_rec = 0
+
+            elif thumb and indexF and not(pinkyF) and middleF and not(ringF):
+                actionlist = [x for x in actions["sad"]]
+                open_stuff(actionlist[0])
+                emotion_rec = 1
+
+            elif thumb and indexF and not(pinkyF) and middleF and ringF:
+                actionlist = [x for x in actions["angry"]]
+                open_stuff(actionlist[0])
+                emotion_rec = 2
+
+            elif thumb and indexF and pinkyF and middleF and ringF:
+                actionlist = [x for x in actions["neutral"]]
+                open_stuff(actionlist[0])
+                emotion_rec = 3
 
             else:
                 pass
